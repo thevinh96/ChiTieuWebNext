@@ -1,0 +1,19 @@
+{
+  "name": "chi-tieu-web",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["frontend", "backend"],
+  "engines": { "node": ">=24 <25" },
+  "packageManager": "npm@11",
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c green,cyan \"npm:dev --workspace=backend\" \"npm:dev --workspace=frontend\"",
+    "build": "npm run build --workspace=frontend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "start": "concurrently -k -n API,WEB -c green,cyan \"npm:start --workspace=backend\" \"npm:start --workspace=frontend\"",
+    "start:frontend": "npm start --workspace=frontend",
+    "start:backend": "npm start --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

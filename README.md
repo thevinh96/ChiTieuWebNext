@@ -47,4 +47,3 @@ Hostinger có Supabase Database Connect wizard; wizard đặt các biến kết 
 - `GET`, `POST`, `PATCH`, `DELETE /api/wallets` — quản lý ví; không xóa được ví còn giao dịch.
 - `GET`, `POST`, `PATCH`, `DELETE /api/budgets` — quản lý ngân sách theo danh mục/tháng.
 - `GET /api/summary` — tổng thu chi của tài khoản hiện tại.
-
