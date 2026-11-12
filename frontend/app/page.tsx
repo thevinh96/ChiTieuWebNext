@@ -207,6 +207,7 @@ function ReportsView({ month, onMonth, transactions, categories }: { month: stri
 }
 
 function ReportSpendingChart({ month, transactions }: { month: string; transactions: Transaction[] }) {
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
   const [year, monthNumber] = month.split("-").map(Number);
   const daysInMonth = new Date(year, monthNumber, 0).getDate();
   const dailyExpenses = transactions.reduce<Record<number, number>>((map, item) => {
@@ -225,11 +226,12 @@ function ReportSpendingChart({ month, transactions }: { month: string; transacti
   const bottom = 244;
   const stepX = (right - left) / daysInMonth;
   const barWidth = Math.min(18, stepX * 0.62);
-  const y = (value: number) => bottom - (value / chartMax) * (bottom - top);
   const dayTicks = [...new Set([1, 5, 10, 15, 20, 25, daysInMonth])].filter((day) => day <= daysInMonth);
   const formatAxis = (value: number) => new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(value);
+  const activePoint = hoveredDay ? points[hoveredDay - 1] : null;
 
-  return <div className="report-bar-wrap">
+  return <div className="report-bar-wrap" onMouseLeave={() => setHoveredDay(null)}>
+    {activePoint && <div className="report-chart-tooltip"><strong>Ngày {activePoint.day}</strong><span>Chi tiêu: {currency(activePoint.amount)}</span></div>}
     <svg className="report-bar-svg" viewBox="0 0 920 286" role="img" aria-label="Biểu đồ cột chi tiêu theo ngày">
       {[0, 1, 2, 3, 4].map((tick) => {
         const value = chartMax * (4 - tick) / 4;
@@ -239,7 +241,10 @@ function ReportSpendingChart({ month, transactions }: { month: string; transacti
       {points.map((point, index) => {
         const height = (point.amount / chartMax) * (bottom - top);
         const x = left + index * stepX + (stepX - barWidth) / 2;
-        return <rect key={point.day} x={x} y={bottom - height} width={barWidth} height={Math.max(height, point.amount ? 2 : 0)} rx="5" className="report-bar"><title>Ngày {point.day}: {currency(point.amount)}</title></rect>;
+        return <g key={point.day} onMouseEnter={() => setHoveredDay(point.day)} onFocus={() => setHoveredDay(point.day)}>
+          <rect x={left + index * stepX} y={top} width={stepX} height={bottom - top} fill="transparent" />
+          {point.amount > 0 && <rect x={x} y={bottom - height} width={barWidth} height={Math.max(height, 2)} rx="5" className="report-bar"><title>Ngày {point.day}: {currency(point.amount)}</title></rect>}
+        </g>;
       })}
       {dayTicks.map((day) => <text key={day} x={left + (day - 0.5) * stepX} y="272" textAnchor="middle" className="report-axis-label">{day}</text>)}
     </svg>
