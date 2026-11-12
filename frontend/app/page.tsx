@@ -15,6 +15,11 @@ type WalletDraft = Partial<WalletItem>;
 type BudgetDraft = Partial<Budget>;
 
 const currency = (value: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
+const formatMoneyInput = (value: number | string | null | undefined) => {
+  const digits = String(value ?? "").replace(/\\D/g, "");
+  return digits ? new Intl.NumberFormat("vi-VN").format(Number(digits)) : "";
+};
+const parseMoneyInput = (value: FormDataEntryValue | undefined) => Number(String(value ?? "").replace(/\\D/g, ""));
 const monthNow = new Date().toISOString().slice(0, 7);
 const categoryIcons: Record<string, typeof Utensils> = { "Ăn uống": Utensils, "Di chuyển": Car, "Mua sắm": ShoppingBag, "Hóa đơn": Receipt, "Giải trí": Shapes, "Sức khỏe": Shapes, "Lương": BriefcaseBusiness, "Khác": Shapes };
 const walletTypes: Record<string, string> = { cash: "Tiền mặt", bank: "Ngân hàng", ewallet: "Ví điện tử", savings: "Tiết kiệm" };
@@ -82,15 +87,20 @@ export default function Dashboard() {
 
   const saveTransaction = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); const fields = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(fields.entries());
+    const payload: Record<string, unknown> = Object.fromEntries(fields.entries());
+    payload.amount = parseMoneyInput(fields.get("amount") ?? undefined);
     if (await runAction(() => api(txDraft?.id ? `/transactions/${txDraft.id}` : "/transactions", { method: txDraft?.id ? "PATCH" : "POST", body: JSON.stringify(payload) }), txDraft?.id ? "Đã cập nhật giao dịch." : "Đã thêm giao dịch.")) setTxDraft(null);
   };
   const saveWallet = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    event.preventDefault(); const fields = new FormData(event.currentTarget);
+    const payload: Record<string, unknown> = Object.fromEntries(fields.entries());
+    payload.openingBalance = parseMoneyInput(fields.get("openingBalance") ?? undefined);
     if (await runAction(() => api(walletDraft?.id ? `/wallets/${walletDraft.id}` : "/wallets", { method: walletDraft?.id ? "PATCH" : "POST", body: JSON.stringify(payload) }), walletDraft?.id ? "Đã cập nhật ví." : "Đã tạo ví.")) setWalletDraft(null);
   };
   const saveBudget = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    event.preventDefault(); const fields = new FormData(event.currentTarget);
+    const payload: Record<string, unknown> = Object.fromEntries(fields.entries());
+    payload.amount = parseMoneyInput(fields.get("amount") ?? undefined);
     if (await runAction(() => api(budgetDraft?.id ? `/budgets/${budgetDraft.id}` : "/budgets", { method: budgetDraft?.id ? "PATCH" : "POST", body: JSON.stringify(payload) }), budgetDraft?.id ? "Đã cập nhật ngân sách." : "Đã lưu ngân sách.")) setBudgetDraft(null);
   };
 
@@ -117,13 +127,31 @@ export default function Dashboard() {
         {activeNav === "Báo cáo" && <ReportsView month={month} onMonth={setMonth} transactions={currentTransactions} categories={categories} income={monthIncome} expenses={monthExpenses} />}
       </div>
     </section>
-    {txDraft && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setTxDraft(null); }}><form className="transaction-modal" onSubmit={saveTransaction}><ModalHead title={txDraft.id ? "Sửa giao dịch" : "Thêm giao dịch"} onClose={() => setTxDraft(null)} /><label>Tên giao dịch<input name="title" defaultValue={txDraft.title} placeholder="Ví dụ: Ăn trưa" maxLength={80} required /></label><div className="form-row"><label>Loại giao dịch<select name="type" defaultValue={txDraft.type || "expense"}><option value="expense">Chi tiêu</option><option value="income">Thu nhập</option></select></label><label>Danh mục<select name="categoryId" defaultValue={txDraft.categoryId || categories[0]?.id} required>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div><div className="form-row"><label>Số tiền (₫)<input name="amount" type="number" min="1" step="1" defaultValue={txDraft.amount} required /></label><label>Ví<select name="walletId" defaultValue={txDraft.walletId || wallets[0]?.id} required>{wallets.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label></div><div className="form-row"><label>Ngày<input name="date" type="date" defaultValue={txDraft.date || new Date().toISOString().slice(0, 10)} required /></label><label>Phương thức<select name="method" defaultValue={txDraft.method || "Tiền mặt"}><option>Tiền mặt</option><option>Chuyển khoản</option><option>Thẻ</option><option>Ví điện tử</option></select></label></div>{formError && <p className="form-error" role="alert">{formError}</p>}<button className="primary-button modal-submit" disabled={busy || !wallets.length || !categories.length}><Plus size={17} /> {busy ? "Đang lưu…" : "Lưu giao dịch"}</button>{!wallets.length && <p className="inline-note">Hãy tạo ví trước khi thêm giao dịch.</p>}</form></div>}
-    {walletDraft && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setWalletDraft(null); }}><form className="transaction-modal" onSubmit={saveWallet}><ModalHead title={walletDraft.id ? "Sửa ví" : "Tạo ví mới"} onClose={() => setWalletDraft(null)} /><label>Tên ví<input name="name" defaultValue={walletDraft.name} placeholder="Ví dụ: Tài khoản ngân hàng" maxLength={60} required /></label><div className="form-row"><label>Loại ví<select name="type" defaultValue={walletDraft.type || "cash"}>{Object.entries(walletTypes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Số dư ban đầu (₫)<input name="openingBalance" type="number" min="0" step="1" defaultValue={walletDraft.openingBalance ?? 0} required /></label></div>{formError && <p className="form-error" role="alert">{formError}</p>}<button className="primary-button modal-submit" disabled={busy}><Check size={17} /> {busy ? "Đang lưu…" : "Lưu ví"}</button></form></div>}
-    {budgetDraft && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setBudgetDraft(null); }}><form className="transaction-modal" onSubmit={saveBudget}><ModalHead title={budgetDraft.id ? "Sửa ngân sách" : "Tạo ngân sách"} onClose={() => setBudgetDraft(null)} /><label>Danh mục<select name="categoryId" defaultValue={budgetDraft.categoryId || categories[0]?.id} required disabled={Boolean(budgetDraft.id)}>{categories.filter((item) => item.name !== "Lương").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><div className="form-row"><label>Ngân sách tháng (₫)<input name="amount" type="number" min="1" step="1" defaultValue={budgetDraft.amount} required /></label>{!budgetDraft.id && <label>Tháng<input name="month" type="month" defaultValue={month} required /></label>}</div>{formError && <p className="form-error" role="alert">{formError}</p>}<button className="primary-button modal-submit" disabled={busy}><Check size={17} /> {busy ? "Đang lưu…" : "Lưu ngân sách"}</button></form></div>}
+    {txDraft && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setTxDraft(null); }}><form className="transaction-modal" onSubmit={saveTransaction}><ModalHead title={txDraft.id ? "Sửa giao dịch" : "Thêm giao dịch"} onClose={() => setTxDraft(null)} /><label>Tên giao dịch<input name="title" defaultValue={txDraft.title} placeholder="Ví dụ: Ăn trưa" maxLength={80} required /></label><div className="form-row"><label>Loại giao dịch<select name="type" defaultValue={txDraft.type || "expense"}><option value="expense">Chi tiêu</option><option value="income">Thu nhập</option></select></label><label>Danh mục<select name="categoryId" defaultValue={txDraft.categoryId || categories[0]?.id} required>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div><div className="form-row"><label>Số tiền<MoneyInput name="amount" defaultValue={txDraft.amount} min={1} /></label><label>Ví<select name="walletId" defaultValue={txDraft.walletId || wallets[0]?.id} required>{wallets.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label></div><div className="form-row"><label>Ngày<input name="date" type="date" defaultValue={txDraft.date || new Date().toISOString().slice(0, 10)} required /></label><label>Phương thức<select name="method" defaultValue={txDraft.method || "Tiền mặt"}><option>Tiền mặt</option><option>Chuyển khoản</option><option>Thẻ</option><option>Ví điện tử</option></select></label></div>{formError && <p className="form-error" role="alert">{formError}</p>}<button className="primary-button modal-submit" disabled={busy || !wallets.length || !categories.length}><Plus size={17} /> {busy ? "Đang lưu…" : "Lưu giao dịch"}</button>{!wallets.length && <p className="inline-note">Hãy tạo ví trước khi thêm giao dịch.</p>}</form></div>}
+    {walletDraft && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setWalletDraft(null); }}><form className="transaction-modal" onSubmit={saveWallet}><ModalHead title={walletDraft.id ? "Sửa ví" : "Tạo ví mới"} onClose={() => setWalletDraft(null)} /><label>Tên ví<input name="name" defaultValue={walletDraft.name} placeholder="Ví dụ: Tài khoản ngân hàng" maxLength={60} required /></label><div className="form-row"><label>Loại ví<select name="type" defaultValue={walletDraft.type || "cash"}>{Object.entries(walletTypes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Số dư ban đầu<MoneyInput name="openingBalance" defaultValue={walletDraft.openingBalance ?? 0} min={0} /></label></div>{formError && <p className="form-error" role="alert">{formError}</p>}<button className="primary-button modal-submit" disabled={busy}><Check size={17} /> {busy ? "Đang lưu…" : "Lưu ví"}</button></form></div>}
+    {budgetDraft && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setBudgetDraft(null); }}><form className="transaction-modal" onSubmit={saveBudget}><ModalHead title={budgetDraft.id ? "Sửa ngân sách" : "Tạo ngân sách"} onClose={() => setBudgetDraft(null)} /><label>Danh mục<select name="categoryId" defaultValue={budgetDraft.categoryId || categories[0]?.id} required disabled={Boolean(budgetDraft.id)}>{categories.filter((item) => item.name !== "Lương").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><div className="form-row"><label>Ngân sách tháng<MoneyInput name="amount" defaultValue={budgetDraft.amount} min={1} /></label>{!budgetDraft.id && <label>Tháng<input name="month" type="month" defaultValue={month} required /></label>}</div>{formError && <p className="form-error" role="alert">{formError}</p>}<button className="primary-button modal-submit" disabled={busy}><Check size={17} /> {busy ? "Đang lưu…" : "Lưu ngân sách"}</button></form></div>}
     {toast && <div className="toast"><span><Check size={15} /></span>{toast}<button onClick={() => setToast("")} aria-label="Đóng"><X size={14} /></button></div>}
   </main>;
 }
 
+function MoneyInput({ name, defaultValue, min = 0 }: { name: string; defaultValue?: number; min?: number }) {
+  const [value, setValue] = useState(() => formatMoneyInput(defaultValue));
+  return <span className="money-input-wrap">
+    <input
+      name={name}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      placeholder="200.000"
+      value={value}
+      onChange={(event) => setValue(formatMoneyInput(event.target.value))}
+      required
+      aria-label="Số tiền, đơn vị VNĐ"
+      data-minimum={min}
+    />
+    <span className="money-input-suffix" aria-hidden="true">VNĐ</span>
+  </span>;
+}
 function PageHeading({ eyebrow, title, detail, action }: { eyebrow: string; title: string; detail: string; action?: React.ReactNode }) { return <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{detail}</p></div>{action}</div>; }
 function ModalHead({ title, onClose }: { title: string; onClose: () => void }) { return <div className="modal-head"><div><span className="eyebrow">CHI TIÊU</span><h2>{title}</h2></div><button type="button" className="icon-button" aria-label="Đóng" onClick={onClose}><X size={19} /></button></div>; }
 function MonthPicker({ month, onChange }: { month: string; onChange: (value: string) => void }) { return <label className="month-picker"><CalendarDays size={16} /><input aria-label="Chọn tháng" type="month" value={month} onChange={(event) => onChange(event.target.value)} /></label>; }
