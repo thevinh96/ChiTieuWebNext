@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const defaultApiUrl = process.env.VERCEL
-  ? "https://chi-tieu-web-next-dr37.vercel.app"
+  ? "https://chi-tieu-web-next.vercel.app"
   : "http://localhost:4000";
 
 const nextConfig: NextConfig = {
