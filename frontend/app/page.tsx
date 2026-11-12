@@ -253,6 +253,7 @@ function ReportSpendingChart({ month, transactions }: { month: string; transacti
 }
 
 function ReportCategoryChart({ categories, transactions, total }: { categories: Category[]; transactions: Transaction[]; total: number }) {
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const categoryTotals = categories.map((category) => ({
     ...category,
     total: transactions.filter((item) => item.type === "expense" && item.categoryId === category.id).reduce((sum, item) => sum + item.amount, 0),
@@ -260,23 +261,29 @@ function ReportCategoryChart({ categories, transactions, total }: { categories: 
   const colors = ["#62a47d", "#687cff", "#e3ab38", "#d16f73", "#8968d8", "#68a9bd", "#8c97a9", "#df8d62"];
   const circumference = 2 * Math.PI * 65;
   let offset = 0;
-  return <div className="report-donut-layout">
+  const activeCategory = categoryTotals.find((item) => item.id === hoveredCategory);
+  const percentage = (amount: number) => total ? (amount / total * 100).toLocaleString("vi-VN", { maximumFractionDigits: 1 }) : "0";
+  return <div className="report-donut-layout" onMouseLeave={() => setHoveredCategory(null)}>
     <div className="report-donut">
       <svg viewBox="0 0 180 180" role="img" aria-label="Biểu đồ tròn chi tiêu theo danh mục">
         <circle cx="90" cy="90" r="65" className="report-donut-track" />
         {categoryTotals.map((item, index) => {
           const length = total ? (item.total / total) * circumference : 0;
-          const segment = <circle key={item.id} cx="90" cy="90" r="65" fill="none" stroke={item.color || colors[index % colors.length]} strokeWidth="22" strokeDasharray={`${length} ${circumference - length}`} strokeDashoffset={-offset} transform="rotate(-90 90 90)" />;
+          const color = item.color || colors[index % colors.length];
+          const segment = <circle key={item.id} cx="90" cy="90" r="65" fill="none" stroke={color} strokeWidth="22" strokeDasharray={`${length} ${circumference - length}`} strokeDashoffset={-offset} transform="rotate(-90 90 90)" onMouseEnter={() => setHoveredCategory(item.id)}><title>{item.name}: {currency(item.total)} ({percentage(item.total)}%)</title></circle>;
           offset += length;
           return segment;
         })}
       </svg>
-      <div className="report-donut-center"><span>Tổng chi</span><strong>{new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(total)}</strong><small>₫</small></div>
+      <div className={`report-donut-center ${activeCategory ? "report-donut-active" : ""}`} aria-live="polite">
+        <span>{activeCategory?.name ?? "Tổng chi"}</span>
+        <strong>{new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(activeCategory?.total ?? total)}</strong>
+        <small>{activeCategory ? `${percentage(activeCategory.total)}% · ₫` : "₫"}</small>
+      </div>
     </div>
-    {categoryTotals.length ? <div className="report-category-legend">{categoryTotals.map((item, index) => <div className="report-category-legend-row" key={item.id}><i style={{ background: item.color || colors[index % colors.length] }} /><span>{item.name}</span><strong>{total ? (item.total / total * 100).toLocaleString("vi-VN", { maximumFractionDigits: 1 }) : 0}%</strong></div>)}</div> : <p className="report-chart-empty">Chưa có dữ liệu danh mục.</p>}
+    {categoryTotals.length ? <div className="report-category-legend">{categoryTotals.map((item, index) => <div className={`report-category-legend-row ${hoveredCategory === item.id ? "report-category-legend-active" : ""}`} key={item.id} onMouseEnter={() => setHoveredCategory(item.id)}><i style={{ background: item.color || colors[index % colors.length] }} /><span>{item.name}</span><strong>{percentage(item.total)}%</strong></div>)}</div> : <p className="report-chart-empty">Chưa có dữ liệu danh mục.</p>}
   </div>;
 }
-
 
 
 function downloadTransactionsExcel({ month, typeFilter, categoryName, transactions, income, expenses }: { month: string; typeFilter: string; categoryName: string; transactions: Transaction[]; income: number; expenses: number }) {
