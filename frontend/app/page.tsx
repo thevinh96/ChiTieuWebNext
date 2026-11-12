@@ -16,10 +16,10 @@ type BudgetDraft = Partial<Budget>;
 
 const currency = (value: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
 const formatMoneyInput = (value: number | string | null | undefined) => {
-  const digits = String(value ?? "").replace(/\\D/g, "");
+  const digits = String(value ?? "").replace(/\D/g, "");
   return digits ? new Intl.NumberFormat("vi-VN").format(Number(digits)) : "";
 };
-const parseMoneyInput = (value: FormDataEntryValue | undefined) => Number(String(value ?? "").replace(/\\D/g, ""));
+const parseMoneyInput = (value: FormDataEntryValue | undefined) => Number(String(value ?? "").replace(/\D/g, ""));
 const monthNow = new Date().toISOString().slice(0, 7);
 const categoryIcons: Record<string, typeof Utensils> = { "Ăn uống": Utensils, "Di chuyển": Car, "Mua sắm": ShoppingBag, "Hóa đơn": Receipt, "Giải trí": Shapes, "Sức khỏe": Shapes, "Lương": BriefcaseBusiness, "Khác": Shapes };
 const walletTypes: Record<string, string> = { cash: "Tiền mặt", bank: "Ngân hàng", ewallet: "Ví điện tử", savings: "Tiết kiệm" };
@@ -144,10 +144,14 @@ function MoneyInput({ name, defaultValue, min = 0 }: { name: string; defaultValu
       autoComplete="off"
       placeholder="200.000"
       value={value}
-      onChange={(event) => setValue(formatMoneyInput(event.target.value))}
+      onChange={(event) => {
+        const formatted = formatMoneyInput(event.target.value);
+        const amount = Number(formatted.replace(/\D/g, ""));
+        event.currentTarget.setCustomValidity(formatted && amount < min ? "Số tiền thấp hơn mức tối thiểu." : "");
+        setValue(formatted);
+      }
       required
       aria-label="Số tiền, đơn vị VNĐ"
-      data-minimum={min}
     />
     <span className="money-input-suffix" aria-hidden="true">VNĐ</span>
   </span>;
