@@ -170,4 +170,76 @@ function Metric({ title, value, icon }: { title: string; value: number; icon: Re
 function TransactionsView({ transactions, categories, filter, onFilter, onAdd, onEdit, onDelete }: { transactions: Transaction[]; categories: Category[]; filter: string; onFilter: (value: string) => void; onAdd: () => void; onEdit: (item: Transaction) => void; onDelete: (id: string) => void }) { const visible = filter === "all" ? transactions : transactions.filter((item) => item.type === filter); return <><PageHeading eyebrow="SỔ GIAO DỊCH" title="Giao dịch" detail="Thêm, xem, chỉnh sửa hoặc xóa các khoản thu chi." action={<button className="primary-button" onClick={onAdd}><Plus size={17} /> Thêm giao dịch</button>} /><div className="panel section-panel"><div className="section-heading"><div className="filter-tabs">{[["all", "Tất cả"], ["income", "Thu nhập"], ["expense", "Chi tiêu"]].map(([value, label]) => <button key={value} className={filter === value ? "filter-active" : ""} onClick={() => onFilter(value)}>{label}</button>)}</div><span className="muted-copy">{visible.length} giao dịch</span></div><TransactionTable transactions={visible} categories={categories} onEdit={onEdit} onDelete={onDelete} /></div></>; }
 function WalletsView({ wallets, onAdd, onEdit, onDelete }: { wallets: WalletItem[]; onAdd: () => void; onEdit: (item: WalletItem) => void; onDelete: (id: string) => void }) { const total = wallets.reduce((sum, item) => sum + item.balance, 0); return <><PageHeading eyebrow="TÀI KHOẢN CỦA BẠN" title="Ví của tôi" detail="Quản lý tiền mặt, tài khoản ngân hàng và ví điện tử." action={<button className="primary-button" onClick={onAdd}><Plus size={17} /> Tạo ví</button>} /><div className="wallet-total panel"><div><span className="card-caption">TỔNG SỐ DƯ CÁC VÍ</span><strong>{currency(total)}</strong></div><Wallet size={26} /></div>{wallets.length ? <div className="wallet-grid">{wallets.map((item) => <article className="wallet-card panel" key={item.id}><div className="wallet-card-head"><span className="wallet-icon" style={{ background: `${item.color}20`, color: item.color }}><Banknote size={20} /></span><span className="row-actions"><button aria-label="Sửa ví" onClick={() => onEdit(item)}><Pencil size={15} /></button><button aria-label="Xóa ví" onClick={() => onDelete(item.id)}><Trash2 size={15} /></button></span></div><span className="muted-copy">{walletTypes[item.type] || item.type}</span><h2>{item.name}</h2><strong className="wallet-balance">{currency(item.balance)}</strong><small>Số dư ban đầu: {currency(item.openingBalance)}</small></article>)}</div> : <div className="panel empty-panel"><Wallet size={30} /><h2>Bạn chưa có ví nào</h2><p>Tạo ví đầu tiên để ghi nhận số dư và gắn giao dịch với tài khoản phù hợp.</p><button className="primary-button" onClick={onAdd}><Plus size={17} /> Tạo ví đầu tiên</button></div>}</>; }
 function BudgetsView({ budgets, categories, month, onMonth, onAdd, onEdit, onDelete }: { budgets: Budget[]; categories: Category[]; month: string; onMonth: (value: string) => void; onAdd: () => void; onEdit: (item: Budget) => void; onDelete: (id: string) => void }) { const total = budgets.reduce((sum, item) => sum + item.amount, 0); const spent = budgets.reduce((sum, item) => sum + item.spent, 0); return <><PageHeading eyebrow="KẾ HOẠCH CHI TIÊU" title="Ngân sách" detail="Đặt hạn mức theo danh mục và theo dõi tiến độ trong tháng." action={<button className="primary-button" onClick={onAdd}><Plus size={17} /> Tạo ngân sách</button>} /><div className="dashboard-toolbar"><MonthPicker month={month} onChange={onMonth} /><div className="budget-summary"><span>Hạn mức <strong>{currency(total)}</strong></span><span>Đã chi <strong>{currency(spent)}</strong></span></div></div>{budgets.length ? <div className="budget-list">{budgets.map((item) => { const ratio = item.amount ? Math.min(item.spent / item.amount * 100, 100) : 0; const over = item.spent > item.amount; return <article className="budget-card panel" key={item.id}><div className="budget-card-top"><span className="budget-dot" style={{ background: item.color }} /><div className="budget-title"><strong>{item.category}</strong><small>{currency(item.spent)} / {currency(item.amount)}</small></div><span className="budget-percent">{Math.round(item.spent / item.amount * 100)}%</span><span className="row-actions"><button aria-label="Sửa ngân sách" onClick={() => onEdit(item)}><Pencil size={15} /></button><button aria-label="Xóa ngân sách" onClick={() => onDelete(item.id)}><Trash2 size={15} /></button></span></div><div className="progress-track"><i className={over ? "over" : ""} style={{ width: `${ratio}%`, background: over ? "#d77b68" : item.color }} /></div><small className={over ? "over-text" : "muted-copy"}>{over ? `Vượt ${currency(item.spent - item.amount)}` : `Còn lại ${currency(item.amount - item.spent)}`}</small></article>; })}</div> : <div className="panel empty-panel"><CreditCard size={30} /><h2>Chưa có ngân sách tháng này</h2><p>Chọn danh mục và đặt mức chi tối đa để kiểm soát kế hoạch của bạn.</p><button className="primary-button" onClick={onAdd}><Plus size={17} /> Tạo ngân sách</button></div>}</>; }
-function ReportsView({ month, onMonth, transactions, categories, income, expenses }: { month: string; onMonth: (value: string) => void; transactions: Transaction[]; categories: Category[]; income: number; expenses: number }) { const byCategory = categories.map((category) => ({ ...category, total: transactions.filter((item) => item.type === "expense" && item.categoryId === category.id).reduce((sum, item) => sum + item.amount, 0) })).filter((item) => item.total).sort((a, b) => b.total - a.total); const net = income - expenses; return <><PageHeading eyebrow="PHÂN TÍCH TÀI CHÍNH" title="Báo cáo" detail="Tổng hợp thu chi thực tế theo tháng và danh mục." /><div className="dashboard-toolbar"><MonthPicker month={month} onChange={onMonth} /><span className="muted-copy">{transactions.length} giao dịch trong tháng</span></div><div className="report-metrics"><Metric title="Thu nhập" value={income} icon={<ArrowDownLeft size={18} />} /><Metric title="Chi tiêu" value={expenses} icon={<ArrowUpRight size={18} />} /><Metric title="Chênh lệch" value={Math.abs(net)} icon={<FileText size={18} />} /></div><section className="panel section-panel"><div className="section-heading"><div><h2>Chi tiêu theo danh mục</h2><p>Tổng chi {currency(expenses)}</p></div></div>{byCategory.length ? <div className="report-categories">{byCategory.map((item) => <div className="report-category" key={item.id}><div><span><i style={{ background: item.color }} />{item.name}</span><strong>{currency(item.total)}</strong></div><div className="progress-track"><i style={{ width: `${expenses ? item.total / expenses * 100 : 0}%`, background: item.color }} /></div></div>)}</div> : <div className="empty-state">Chưa có khoản chi nào trong tháng này.</div>}</section><section className="panel section-panel"><div className="section-heading"><div><h2>Thu chi theo ngày</h2><p>Ngày có giao dịch trong tháng đã chọn</p></div></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Ngày</th><th>Số giao dịch</th><th>Thu nhập</th><th>Chi tiêu</th><th>Chênh lệch</th></tr></thead><tbody>{Object.entries(transactions.reduce<Record<string, { count: number; income: number; expenses: number }>>((map, item) => { const row = map[item.date] ?? { count: 0, income: 0, expenses: 0 }; row.count++; row[item.type === "income" ? "income" : "expenses"] += item.amount; map[item.date] = row; return map; }, {})).sort(([a], [b]) => b.localeCompare(a)).map(([date, row]) => <tr key={date}><td>{new Date(`${date}T00:00:00`).toLocaleDateString("vi-VN")}</td><td>{row.count}</td><td className="money income">{currency(row.income)}</td><td className="money expense">{currency(row.expenses)}</td><td>{currency(row.income - row.expenses)}</td></tr>)}</tbody></table>{!transactions.length && <div className="empty-state">Chưa có dữ liệu để lập báo cáo.</div>}</div></section></>; }
+function ReportsView({ month, onMonth, transactions, categories, income, expenses }: { month: string; onMonth: (value: string) => void; transactions: Transaction[]; categories: Category[]; income: number; expenses: number }) {
+  const byCategory = categories.map((category) => ({ ...category, total: transactions.filter((item) => item.type === "expense" && item.categoryId === category.id).reduce((sum, item) => sum + item.amount, 0) })).filter((item) => item.total).sort((a, b) => b.total - a.total);
+  const net = income - expenses;
+  const daily = transactions.reduce<Record<string, { count: number; income: number; expenses: number }>>((map, item) => {
+    const row = map[item.date] ?? { count: 0, income: 0, expenses: 0 };
+    row.count++;
+    row[item.type === "income" ? "income" : "expenses"] += item.amount;
+    map[item.date] = row;
+    return map;
+  }, {});
+  const dailyRows = Object.entries(daily).sort(([a], [b]) => b.localeCompare(a));
+
+  return <>
+    <PageHeading eyebrow="PHÂN TÍCH TÀI CHÍNH" title="Báo cáo" detail="Tổng hợp thu chi thực tế theo tháng và danh mục." />
+    <div className="dashboard-toolbar"><MonthPicker month={month} onChange={onMonth} /><span className="muted-copy">{transactions.length} giao dịch trong tháng</span></div>
+    <div className="report-metrics"><Metric title="Thu nhập" value={income} icon={<ArrowDownLeft size={18} />} /><Metric title="Chi tiêu" value={expenses} icon={<ArrowUpRight size={18} />} /><Metric title="Chênh lệch" value={Math.abs(net)} icon={<FileText size={18} />} /></div>
+    <section className="panel section-panel">
+      <div className="section-heading"><div><h2>Xu hướng thu chi</h2><p>Thu nhập và chi tiêu theo ngày trong tháng</p></div></div>
+      <DailyTrendChart month={month} transactions={transactions} />
+    </section>
+    <section className="panel section-panel"><div className="section-heading"><div><h2>Chi tiêu theo danh mục</h2><p>Tổng chi {currency(expenses)}</p></div></div>{byCategory.length ? <div className="report-categories">{byCategory.map((item) => <div className="report-category" key={item.id}><div><span><i style={{ background: item.color }} />{item.name}</span><strong>{currency(item.total)}</strong></div><div className="progress-track"><i style={{ width: `${expenses ? item.total / expenses * 100 : 0}%`, background: item.color }} /></div></div>)}</div> : <div className="empty-state">Chưa có khoản chi nào trong tháng này.</div>}</section>
+    <section className="panel section-panel"><div className="section-heading"><div><h2>Thu chi theo ngày</h2><p>Chi tiết giao dịch từng ngày trong tháng đã chọn</p></div></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Ngày</th><th>Số giao dịch</th><th>Thu nhập</th><th>Chi tiêu</th><th>Chênh lệch</th></tr></thead><tbody>{dailyRows.map(([date, row]) => <tr key={date}><td>{new Date(`${date}T00:00:00`).toLocaleDateString("vi-VN")}</td><td>{row.count}</td><td className="money income">{currency(row.income)}</td><td className="money expense">{currency(row.expenses)}</td><td>{currency(row.income - row.expenses)}</td></tr>)}</tbody></table>{!transactions.length && <div className="empty-state">Chưa có dữ liệu để lập báo cáo.</div>}</div></section>
+  </>;
+}
+
+function DailyTrendChart({ month, transactions }: { month: string; transactions: Transaction[] }) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const daysInMonth = new Date(year, monthNumber, 0).getDate();
+  const totals = transactions.reduce<Record<number, { income: number; expenses: number }>>((map, item) => {
+    const day = Number(item.date.slice(8, 10));
+    const row = map[day] ?? { income: 0, expenses: 0 };
+    row[item.type === "income" ? "income" : "expenses"] += item.amount;
+    map[day] = row;
+    return map;
+  }, {});
+  const points = Array.from({ length: daysInMonth }, (_, index) => ({ day: index + 1, income: totals[index + 1]?.income ?? 0, expenses: totals[index + 1]?.expenses ?? 0 }));
+  const maxValue = Math.max(0, ...points.flatMap((point) => [point.income, point.expenses]));
+  const chartMax = maxValue === 0 ? 1 : maxValue * 1.15;
+  const left = 66;
+  const right = 790;
+  const top = 18;
+  const bottom = 205;
+  const x = (index: number) => left + (points.length <= 1 ? 0 : index / (points.length - 1)) * (right - left);
+  const y = (value: number) => bottom - (value / chartMax) * (bottom - top);
+  const line = (key: "income" | "expenses") => points.map((point, index) => `${index === 0 ? "M" : "L"} ${x(index).toFixed(1)} ${y(point[key]).toFixed(1)}`).join(" ");
+  const compactMoney = (value: number) => value >= 1_000_000 ? `${Number((value / 1_000_000).toFixed(1))} tr` : value >= 1_000 ? `${Number((value / 1_000).toFixed(1))}k` : String(Math.round(value));
+  const dayTicks = [...new Set([1, 5, 10, 15, 20, 25, daysInMonth])].filter((day) => day <= daysInMonth);
+  return <div className="trend-chart">
+    <div className="trend-legend"><span><i className="trend-income-dot" />Thu nhập</span><span><i className="trend-expense-dot" />Chi tiêu</span></div>
+    <div className="trend-chart-scroll">
+      <svg className="trend-svg" viewBox="0 0 810 240" role="img" aria-label="Biểu đồ đường thu nhập và chi tiêu theo ngày">
+        {[0, 1, 2, 3, 4].map((tick) => {
+          const value = chartMax * (4 - tick) / 4;
+          const yy = top + tick * (bottom - top) / 4;
+          return <g key={tick}><line x1={left} x2={right} y1={yy} y2={yy} className="trend-gridline" /><text x={left - 10} y={yy + 4} textAnchor="end" className="trend-axis-label">{compactMoney(value)}</text></g>;
+        })}
+        {dayTicks.map((day) => {
+          const index = day - 1;
+          return <text key={day} x={x(index)} y="229" textAnchor="middle" className="trend-axis-label">{day}</text>;
+        })}
+        {points.length > 1 && <>
+          <path d={line("income")} className="trend-line trend-income-line" />
+          <path d={line("expenses")} className="trend-line trend-expense-line" />
+        </>}
+        {points.map((point, index) => <g key={point.day}>
+          <circle cx={x(index)} cy={y(point.income)} r={point.income ? 3.5 : 1.5} className="trend-point trend-income-point"><title>{point.day}日 · Thu nhập: {currency(point.income)}</title></circle>
+          <circle cx={x(index)} cy={y(point.expenses)} r={point.expenses ? 3.5 : 1.5} className="trend-point trend-expense-point"><title>{point.day}日 · Chi tiêu: {currency(point.expenses)}</title></circle>
+        </g>)}
+      </svg>
+    </div>
+    {!transactions.length && <p className="trend-empty">Chưa có dữ liệu thu chi trong tháng này.</p>}
+  </div>;
+}
