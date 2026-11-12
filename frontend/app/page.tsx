@@ -194,7 +194,7 @@ function ReportsView({ month, onMonth, transactions, categories }: { month: stri
   });
 
   return <>
-    <PageHeading eyebrow="PHÂN TÍCH TÀI CHÍNH" title="Báo cáo" detail="Lọc và xuất chi tiết thu chi theo tháng." action={<button className="primary-button" onClick={exportReport}><FileText size={16} /> Xuất Excel</button>} />
+    <PageHeading eyebrow="PHÂN TÍCH TÀI CHÍNH" title="Báo cáo" detail="Lọc và xuất chi tiết thu chi theo tháng." action={<button className="primary-button report-export-button" onClick={exportReport}><FileText size={16} /> Xuất Excel</button>} />
     <div className="report-filter-row">
       <MonthPicker month={month} onChange={onMonth} />
       <label>Loại giao dịch<select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="all">Tất cả</option><option value="income">Thu nhập</option><option value="expense">Chi tiêu</option></select></label>
