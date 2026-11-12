@@ -43,3 +43,6 @@ a{color:inherit;text-decoration:none}
 
 .report-filter-row>.month-picker{flex-basis:270px;width:270px;height:48px;padding:0 14px;gap:11px}.report-filter-row>.month-picker input{width:100%;min-width:0;font-size:14px}.report-filter-row>label{flex-basis:225px}.report-filter-row select{height:48px}.report-export-button{height:48px;padding:0 20px;white-space:nowrap;flex:0 0 auto}
 @media(max-width:570px){.report-filter-row>.month-picker{flex-basis:235px;width:235px;height:48px}.report-filter-row>.month-picker input{font-size:13px}.report-filter-row>label{flex-basis:195px}.report-export-button{height:48px}}
+
+.report-filter-row>.month-picker{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;box-sizing:border-box;height:52px;padding:0 15px;gap:12px}.report-filter-row>.month-picker>svg{display:block;flex:0 0 20px;width:20px;height:20px}.report-filter-row>.month-picker input{display:block;flex:1 1 0;width:0;min-width:0;height:100%;margin:0;padding:0;border:0;line-height:1.2;vertical-align:middle;font-size:14px}.report-filter-row>.month-picker input::-webkit-calendar-picker-indicator{margin:0 0 0 8px;cursor:pointer}
+@media(max-width:570px){.report-filter-row>.month-picker{height:48px}.report-filter-row>.month-picker input{font-size:13px}}
