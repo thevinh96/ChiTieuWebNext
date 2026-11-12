@@ -195,10 +195,11 @@ function ReportsView({ month, onMonth, transactions, categories }: { month: stri
 
   return <>
     <PageHeading eyebrow="PHÂN TÍCH TÀI CHÍNH" title="Báo cáo" detail="Lọc và xuất chi tiết thu chi theo tháng." action={<button className="primary-button" onClick={exportReport}><FileText size={16} /> Xuất Excel</button>} />
-    <div className="dashboard-toolbar"><MonthPicker month={month} onChange={onMonth} /><span className="muted-copy">{filteredTransactions.length}/{transactions.length} giao dịch phù hợp bộ lọc</span></div>
-    <div className="report-filters">
+    <div className="report-filter-row">
+      <MonthPicker month={month} onChange={onMonth} />
       <label>Loại giao dịch<select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="all">Tất cả</option><option value="income">Thu nhập</option><option value="expense">Chi tiêu</option></select></label>
       <label>Danh mục<select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option value="all">Tất cả danh mục</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+      <span className="muted-copy report-filter-count">{filteredTransactions.length}/{transactions.length} giao dịch</span>
     </div>
     <div className="report-metrics"><Metric title="Thu nhập" value={income} icon={<ArrowDownLeft size={18} />} /><Metric title="Chi tiêu" value={expenses} icon={<ArrowUpRight size={18} />} /><Metric title="Chênh lệch" value={Math.abs(income - expenses)} icon={<FileText size={18} />} /></div>
     <section id="daily-report" className="panel section-panel"><div className="section-heading"><div><h2>Thu chi theo ngày</h2><p>Chi tiết đã lọc theo tháng, loại giao dịch và danh mục</p></div></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Ngày</th><th>Số giao dịch</th><th>Thu nhập</th><th>Chi tiêu</th><th>Chênh lệch</th></tr></thead><tbody>{dailyRows.map(([date, row]) => <tr key={date}><td>{new Date(`${date}T00:00:00`).toLocaleDateString("vi-VN")}</td><td>{row.count}</td><td className="money income">{currency(row.income)}</td><td className="money expense">{currency(row.expenses)}</td><td>{currency(row.income - row.expenses)}</td></tr>)}</tbody></table>{!filteredTransactions.length && <div className="empty-state">Không có giao dịch phù hợp bộ lọc.</div>}</div></section>
