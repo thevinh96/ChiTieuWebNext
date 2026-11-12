@@ -149,7 +149,7 @@ function MoneyInput({ name, defaultValue, min = 0 }: { name: string; defaultValu
         const amount = Number(formatted.replace(/\D/g, ""));
         event.currentTarget.setCustomValidity(formatted && amount < min ? "Số tiền thấp hơn mức tối thiểu." : "");
         setValue(formatted);
-      }
+      }}
       required
       aria-label="Số tiền, đơn vị VNĐ"
     />
