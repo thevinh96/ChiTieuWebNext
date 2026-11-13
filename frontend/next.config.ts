@@ -6,7 +6,7 @@ const defaultApiUrl = process.env.VERCEL
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    const apiUrl = (process.env.API_URL ?? defaultApiUrl).replace(/\/+$/, "");
+    const apiUrl = (process.env.API_URL?.trim() || defaultApiUrl).replace(/\/+$/, "");
     return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
   },
 };
